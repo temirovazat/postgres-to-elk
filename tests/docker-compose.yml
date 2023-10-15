@@ -1,0 +1,56 @@
+services:
+  script:
+    build: ../backend
+    env_file:
+      - ./.env
+
+  tests:
+    image: postman/newman:5.3.1
+    volumes:
+      - ./src:/etc/newman
+    command: run ETLTests.postman_collection.json --env-var "base_url=elastic:9200"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elastic:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:14.5-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - ../infra/data/cinemax_database.sql:/docker-entrypoint-initdb.d/cinemax_database.sql
+    env_file:
+      - ./.env
+    healthcheck:
+      test: pg_isready -h postgres -U postgres
+      interval: 5s
+      timeout: 5s
+      retries: 100
+
+  elastic:
+    image: elasticsearch:7.17.8
+    ports:
+      - 9200:9200
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: false
+      ES_JAVA_OPTS: -Xms1024m -Xmx1024m
+    healthcheck:
+      test: curl -s http://elastic:9200 >/dev/null || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 100
+
+  redis:
+    image: redis:7.0.5
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: redis-cli ping
+      interval: 5s
+      timeout: 5s
+      retries: 100

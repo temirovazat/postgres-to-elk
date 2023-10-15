@@ -1,0 +1,35 @@
+services:
+  script:
+    image: temirovazat/postgres_to_elastic:1.0.0
+    env_file:
+      - ./.env
+
+  postgres:
+    image: postgres:14.5-alpine
+    expose:
+      - 5432
+    volumes:
+      - ./data/cinemax_database.sql:/docker-entrypoint-initdb.d/cinemax_database.sql
+    env_file:
+      - ./.env
+
+  elastic:
+    image: elasticsearch:7.17.8
+    expose:
+      - 9200
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: false
+      ES_JAVA_OPTS: -Xms1024m -Xmx1024m
+  
+  redis:
+    image: redis:7.0.5
+    expose:
+      - 6379
+
+  kibana:
+    image: kibana:7.17.8
+    ports:
+      - 5601:5601
+    environment:
+      ELASTICSEARCH_HOSTS: http://elastic:9200

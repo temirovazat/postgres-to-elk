@@ -1,0 +1,5 @@
+psycopg2-binary==2.9
+elasticsearch==7.17.8
+redis==4.3.4
+pydantic==1.10.8
+pytz==2023.3
